@@ -2,7 +2,9 @@
 WiFiMulti wifiMulti;
 #define DEVICE "ESP32"
 
+#include <Adafruit_Sensor.h>
 #include <Adafruit_SHT31.h>
+#include <Adafruit_LIS3DH.h>
 #include <Adafruit_DotStar.h>
 
 #include <InfluxDbClient.h>
@@ -21,11 +23,15 @@ WiFiMulti wifiMulti;
 #define DATAPIN    33
 #define CLOCKPIN   21
 
+#define CLICKTHRESHHOLD 80
+
 InfluxDBClient client(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
 
 Point sensor("climate");
 
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
+
+Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 
 Adafruit_DotStar strip(NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BRG);
 
@@ -35,7 +41,7 @@ void setup() {
   WiFi.mode(WIFI_STA);
   wifiMulti.addAP(WIFI_SSID, WIFI_PASSWORD);
 
-  Serial.print("Connecting to wifi");
+  Serial.println("Connecting to wifi");
   while (wifiMulti.run() != WL_CONNECTED) {
     Serial.print(".");
     delay(500);
@@ -47,21 +53,24 @@ void setup() {
   timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
 
   if (client.validateConnection()) {
-    Serial.print("Connected to InfluxDB: ");
+    Serial.println("Connected to InfluxDB: ");
     Serial.println(client.getServerUrl());
   } else {
-    Serial.print("InfluxDB connection failed: ");
+    Serial.println("InfluxDB connection failed: ");
     Serial.println(client.getLastErrorMessage());
   }
-
-
 
   if (! sht31.begin(0x44)) {
     Serial.println("Couldn't find SHT31 sensor!");
     while (1) delay(1);
   }
+  Serial.println("SHT31 found!");
 
-  Serial.println("Found SHT31 sensor!");
+  if (! lis.begin(0x18)) {
+    Serial.println("Couldn't find LIS3DH sensor!");
+    while (1) yield();
+  }
+  Serial.println("LIS3DH found!");
 
   strip.begin();            
   strip.setBrightness(20);
@@ -92,18 +101,25 @@ void loop() {
   sensor.addField("temperature", t);
 
   if (! isnan(t)) {
-    Serial.print("Temp *C = "); Serial.print(t); Serial.print("\t\t");
+    Serial.print("Temp *C : "); Serial.print(t);
+    Serial.println();
   } else { 
     Serial.println("Failed to read temperature");
     error();
   }
   
   if (! isnan(h)) {
-    Serial.print("Hum. % = "); Serial.println(h);
+    Serial.print("Hum. % : "); Serial.print(h);
+    Serial.println();
   } else { 
     Serial.println("Failed to read humidity");
     error();
   }
+
+  lis.read();
+  Serial.print("X: "); Serial.println(lis.x);
+  Serial.print("Y: "); Serial.println(lis.y);
+  Serial.print("Z: "); Serial.println(lis.z);
 
   Serial.print("Writing: ");
   Serial.println(sensor.toLineProtocol());
@@ -120,6 +136,6 @@ void loop() {
   }
   
   success();
-  Serial.println("Wait 10s");
-  delay(10000);
+  Serial.println("Wait 1s");
+  delay(1000);
 }
