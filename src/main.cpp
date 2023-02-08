@@ -28,6 +28,7 @@ WiFiMulti wifiMulti;
 InfluxDBClient client(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN, InfluxDbCloud2CACert);
 
 Point sensor("climate");
+Point motion("motion");
 
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
@@ -49,6 +50,7 @@ void setup() {
   Serial.println();
 
   sensor.addTag("device", DEVICE);
+  motion.addTag("device", DEVICE);
 
   timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
 
@@ -93,12 +95,18 @@ void loop() {
   strip.show();   
 
   sensor.clearFields();
+  motion.clearFields();
 
   float t = sht31.readTemperature();
   float h = sht31.readHumidity();
 
+  lis.read();
+
   sensor.addField("humidity", h);
   sensor.addField("temperature", t);
+  motion.addField("X", lis.x);
+  motion.addField("Y", lis.y);
+  motion.addField("Z", lis.z);
 
   if (! isnan(t)) {
     Serial.print("Temp *C : "); Serial.print(t);
@@ -130,7 +138,13 @@ void loop() {
   }
 
   if (!client.writePoint(sensor)) {
-    Serial.print("InfluxDB write failed: ");
+    Serial.print("InfluxDB sensor write failed: ");
+    Serial.println(client.getLastErrorMessage());
+    error();
+  }
+
+  if (!client.writePoint(motion)) {
+    Serial.print("InfluxDB motion write failed: ");
     Serial.println(client.getLastErrorMessage());
     error();
   }
