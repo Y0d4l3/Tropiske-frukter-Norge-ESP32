@@ -33,7 +33,7 @@ void setup() {
   wifiMulti.addAP(WIFI_SSID, WIFI_PASSWORD);
   climate.addTag("device", DEVICE);
   motion.addTag("device", DEVICE);
-  timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
+  timeSync(TZ_INFO, "no.pool.ntp.org");
   strip.begin();            
   strip.setBrightness(20);
   strip.setPixelColor(0,255,0,0);
@@ -47,23 +47,23 @@ void setup() {
   Serial.println();
 
   if (!client.validateConnection()) {
-    Serial.println("InfluxDB connection failed: ");
+    Serial.println("InfluxDB connection failed");
     Serial.println(client.getLastErrorMessage());
     while (1) delay(1);
   }
-  Serial.println("Connected to InfluxDB: ");
+  Serial.println("Connected to InfluxDB");
 
   if (! sht31.begin(0x44)) {
-    Serial.println("Couldn't find SHT31 sensor!");
+    Serial.println("Couldn't find SHT31 sensor");
     while (1) delay(1);
   }
-  Serial.println("SHT31 found!");
+  Serial.println("SHT31 found");
 
   if (! lis.begin(0x18)) {
-    Serial.println("Couldn't find LIS3DH sensor!");
+    Serial.println("Couldn't find LIS3DH sensor");
     while (1) delay(1);
   }
-  Serial.println("LIS3DH found!");
+  Serial.println("LIS3DH found");
 }
 
 void loop() {
