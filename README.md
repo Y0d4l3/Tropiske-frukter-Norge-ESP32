@@ -1,3 +1,4 @@
+Change the following values in the main.cpp file:
 ```c++
 define DEVICE "Device_Name"
 define WIFI_SSID "Wifi_SSID"
