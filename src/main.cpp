@@ -86,7 +86,9 @@ void loop() {
 
   if (ltr329.newDataAvailable()) {
     valid = ltr329.readBothChannels(visible_plus_ir, infrared);
-    if (valid) {
+    if (valid) {   
+    light.addField("visible_plus_ir", visible_plus_ir);
+    light.addField("infrared", infrared);
     }
   }
 
@@ -96,8 +98,6 @@ void loop() {
   acceleration.addField("X", lis3dh.x);
   acceleration.addField("Y", lis3dh.y);
   acceleration.addField("Z", lis3dh.z);
-  light.addField("visible_plus_ir", visible_plus_ir);
-  light.addField("infrared", infrared);
 
   if ((WiFi.RSSI() == 0) && (wifiMulti.run() != WL_CONNECTED)) {
     Serial.println("Wifi connection lost");
